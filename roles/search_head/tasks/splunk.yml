@@ -11,7 +11,7 @@
   tags:
    - install
    - security
-  user: name=splunk comment="Splunk service user" shell=/usr/sbin/nologin groups=splunk createhome=no 
+  user: name=splunk comment="Splunk service user" shell=/usr/sbin/nologin groups=splunk createhome=no
 
 - name: make /opt writetable by splunk
   tags:
@@ -20,26 +20,33 @@
 
 - name: checking if splunk is install
   tags: install
-  stat: path=/opt/splunk
+  stat: path={{splunk_home}}
   register: splunk_path
 
-- name: is splunk installed? 
+- name: is splunk installed?
   tags: install
-  debug: msg='splunk is already installed under /opt/splunk'
+  debug: msg='splunk is already installed under {{splunk_home}}'
   when: splunk_path.stat.exists
 
 - name: install splunk binary
   tags:
    - install
-  unarchive: src=splunk_binaries/{{splunk_binary}} dest=/opt/ owner=splunk group=splunk creates=yes 
+  unarchive: src=splunk_binaries/{{splunk_binary}} dest=/opt/ owner=splunk group=splunk creates=yes
   sudo: yes
   sudo_user: splunk
+  when: splunk_path.stat.exists == false
+
+- name: CHOWN Directory
+  tags:
+    - install
+  sudo: yes
+  shell: 'chown -R splunk:splunk {{splunk_home}}'
   when: splunk_path.stat.exists == false
 
 - name: accept license and start splunk
   tags:
    - install
-  shell: /opt/splunk/bin/splunk start --accept-license
+  shell: '{{splunk_home}}/bin/splunk start --answer-yes --no-prompt --accept-license'
   sudo: yes
   sudo_user: splunk
   when: splunk_path.stat.exists == false
@@ -47,10 +54,9 @@
 - name: enable boot-start
   tags:
    - install
-  shell: /opt/splunk/bin/splunk enable boot-start
+  shell: '{{splunk_home}}/bin/splunk enable boot-start -user splunk'
   when: splunk_path.stat.exists == false
-#  sudo: yes
-#  sudo_user: splunk
+  sudo: yes
 
 - name: make /etc/init.d/splunk executable
   tags:
@@ -60,7 +66,7 @@
 - name: touch ui so it does not ask for the password to be changed
   tags:
    - install
-  shell: touch /opt/splunk/etc/.ui_login
+  shell: 'touch {{splunk_home}}/etc/.ui_login'
   sudo: yes
   sudo_user: splunk
   when: splunk_path.stat.exists == false

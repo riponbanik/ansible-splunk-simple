@@ -7,8 +7,6 @@
 
 # servers that are meant to be splunk search heads, will also have the common config applied.
 [search_head]
-#1.1.1.1 
-#sh1.buttercup.com
 
 # servers that are meant to be indexers, will also have the common config applied.
 [indexer]
